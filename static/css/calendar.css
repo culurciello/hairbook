@@ -1,0 +1,112 @@
+/* Calendar Container */
+.fc {
+    width: 100%;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+}
+
+/* Calendar Header */
+.fc-header-toolbar {
+    margin-bottom: 1.5em;
+}
+
+.fc-toolbar-title {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+/* Time Grid */
+.fc-timegrid-slot {
+    height: 2.5em;
+}
+
+.fc-timegrid-slot-label {
+    font-size: 0.85em;
+}
+
+/* Events */
+.fc-event {
+    border: none;
+    padding: 2px 4px;
+    margin: 1px 0;
+    cursor: pointer;
+}
+
+.fc-event-main {
+    padding: 2px 4px;
+}
+
+.fc-event-title {
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.fc-event-time {
+    font-size: 0.85em;
+    opacity: 0.8;
+}
+
+/* Business Hours */
+.fc-businessHours {
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.fc-non-business {
+    background-color: #f8f9fa;
+}
+
+/* Today Column */
+.fc-day-today {
+    background-color: rgba(255, 220, 40, 0.15) !important;
+}
+
+/* Time Grid Lines */
+.fc-timegrid-slot {
+    border-bottom: 1px solid #ddd;
+}
+
+/* Event Colors */
+.fc-event.busy {
+    background-color: #ff9f89;
+    border-color: #ff7f6e;
+}
+
+/* Selection */
+.fc-highlight {
+    background-color: rgba(188, 232, 241, 0.3);
+}
+
+/* Hover Effects */
+.fc-event:hover {
+    opacity: 0.9;
+}
+
+/* Column Headers */
+.fc-col-header-cell {
+    padding: 8px 4px;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+/* Time Slots */
+.fc-timegrid-slot-label-cushion {
+    padding: 0 4px;
+}
+
+/* Event Content */
+.fc-event-main-frame {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .fc-toolbar {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .fc-toolbar-title {
+        font-size: 1.2em;
+    }
+}

@@ -1,0 +1,113 @@
+/* General Layout */
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: Arial, sans-serif;
+}
+
+.content {
+    flex: 1;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Footer */
+.footer {
+    background-color: #f8f9fa;
+    padding: 20px;
+    text-align: center;
+    border-top: 1px solid #dee2e6;
+    margin-top: auto;
+}
+
+.footer-content {
+    max-width: 800px;
+    margin: 0 auto;
+    color: #6c757d;
+}
+
+.footer-content p {
+    margin: 0;
+}
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.user-info {
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+.admin-controls {
+    margin-bottom: 20px;
+    text-align: right;
+}
+
+/* Service Info */
+.service-info {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Modal Styles */
+.modal-body {
+    padding: 20px;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+/* Service Management */
+.list-group-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+}
+
+.list-group-item small {
+    color: #6c757d;
+}
+
+/* Buttons */
+.btn-outline-danger {
+    border-width: 2px;
+}
+
+/* Form Elements */
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .content {
+        padding: 20px;
+    }
+
+    .header {
+        margin-bottom: 20px;
+    }
+
+    .user-info {
+        position: static;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    .footer-content {
+        font-size: 0.9em;
+    }
+}

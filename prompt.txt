@@ -1,0 +1,25 @@
+prompt
+
+--
+
+Design a booking website for a hair salon called Sheek Hair. 
+Use python and flask to build the website. 
+Use mysql lite for the database.
+Use fullcalendar javascript library to implement a calendar with graphical create and drag drop events.
+Days of the week are Monday to Sunday from 9am to 6pm.
+
+The website should have the following features:
+- admin has a login: {admin, admin123}, users can login: {user, user123}
+- show a calendar view of available appointments
+- allow users to book appointments on the calendar
+- when booking appointments, user will prvide:
+    - name, phone number and date and time, and select services needed: 
+    { {men haircut, 30 mins}, {womens haircut, 1 hour}, {childrens haircut, 30 mins}
+      {perm, 2 hour}, {magic, 2.5 hour} }
+- when a user books an appointment, the calendar view should be updated to reflect the new booking
+- all bookings are saved to the database, and marked as booked on calendar for everyone
+- admin can view all bookings and phone numbers, can edit, delete and add new services
+- users can view and edit their own bookings and can only see if a time slot is available
+
+
+In all html pages, add a footer with information: "Sheek hair studio, 3457 Bethel Dr #F, West Lafayette, IN 47906, Phone: (765) 838-0117"

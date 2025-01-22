@@ -1,0 +1,22 @@
+{
+    "men_haircut": {
+        "name": "Men Haircut",
+        "duration": 30
+    },
+    "women_haircut": {
+        "name": "Women Haircut",
+        "duration": 60
+    },
+    "children_haircut": {
+        "name": "Children Haircut",
+        "duration": 30
+    },
+    "perm": {
+        "name": "Perm",
+        "duration": 120
+    },
+    "magic": {
+        "name": "Magic",
+        "duration": 150
+    }
+}
