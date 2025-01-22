@@ -10,16 +10,17 @@ Days of the week are Monday to Sunday from 9am to 6pm.
 
 The website should have the following features:
 - admin has a login: {admin, admin123}, users can login: {user, user123}
+- a sign-up page for customers to create an account. The sign up page will need {name, last name, phone number, email, password}
 - show a calendar view of available appointments
-- allow users to book appointments on the calendar
+- allow users to book appointments on the calendar, and add a button on top of page for themto edit their information
 - when booking appointments, user will prvide:
     - name, phone number and date and time, and select services needed: 
     { {men haircut, 30 mins}, {womens haircut, 1 hour}, {childrens haircut, 30 mins}
       {perm, 2 hour}, {magic, 2.5 hour} }
 - when a user books an appointment, the calendar view should be updated to reflect the new booking
 - all bookings are saved to the database, and marked as booked on calendar for everyone
-- admin can view all bookings and phone numbers, can edit, delete and add new services
+- admin can view all bookings including names and phone numbers, can edit, delete and add new services
 - users can view and edit their own bookings and can only see if a time slot is available
-
+- when booking an oppointment, registed user do nto need to supply name and phone number, as it is already information from their login
 
 In all html pages, add a footer with information: "Sheek hair studio, 3457 Bethel Dr #F, West Lafayette, IN 47906, Phone: (765) 838-0117"

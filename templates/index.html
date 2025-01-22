@@ -56,6 +56,7 @@
         <div class="header">
             <div class="user-info">
                 <span class="me-3">Welcome, {{ current_user.username }}</span>
+                <button class="btn btn-outline-primary btn-sm me-2" onclick="showProfileModal()">Edit Profile</button>
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm">Logout</a>
             </div>
             <h1>Sheek Hair Design</h1>
@@ -81,14 +82,14 @@
                     <div class="modal-body">
                         <form id="bookingForm">
                             <input type="hidden" id="appointmentId">
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Name</label>
-                                <input type="text" class="form-control" id="name" required>
+                            {% if current_user.is_admin %}
+                            <div class="mb-3 user-details" style="display: none;">
+                                <h6>User Details:</h6>
+                                <p class="mb-1"><strong>Name:</strong> <span id="userFullName"></span></p>
+                                <p class="mb-1"><strong>Phone:</strong> <span id="userPhone"></span></p>
+                                <p class="mb-1"><strong>Email:</strong> <span id="userEmail"></span></p>
                             </div>
-                            <div class="mb-3">
-                                <label for="phone" class="form-label">Phone Number</label>
-                                <input type="tel" class="form-control" id="phone" required>
-                            </div>
+                            {% endif %}
                             <div class="mb-3">
                                 <label for="service" class="form-label">Service</label>
                                 <select class="form-select" id="service" required>
@@ -106,6 +107,48 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="button" class="btn btn-danger" id="deleteAppointment" style="display: none;">Delete</button>
                         <button type="button" class="btn btn-primary" id="saveAppointment">Save Appointment</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Modal -->
+        <div class="modal fade" id="profileModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Profile</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="profileForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="first_name" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="profile_first_name" name="first_name" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="last_name" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="profile_last_name" name="last_name" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="phone_number" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="profile_phone_number" name="phone_number" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="profile_email" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="new_password" class="form-label">New Password (leave empty to keep current)</label>
+                                <input type="password" class="form-control" id="profile_new_password" name="new_password">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
                     </div>
                 </div>
             </div>
@@ -156,11 +199,74 @@
     </footer>
 
     <script>
+        var calendar;
+        var selectedStart;
+        var bookingModal;
+        var services = {};
+        var isAdmin = {{ current_user.is_admin|tojson }};
+        var currentAppointment = null;
+        var profileModal;
+
+        // Profile management functions
+        function showProfileModal() {
+            // Fetch current user data
+            fetch('/user/profile')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('profile_first_name').value = data.user.first_name;
+                        document.getElementById('profile_last_name').value = data.user.last_name;
+                        document.getElementById('profile_phone_number').value = data.user.phone_number;
+                        document.getElementById('profile_email').value = data.user.email;
+                        document.getElementById('profile_new_password').value = '';
+                        profileModal.show();
+                    } else {
+                        alert('Error loading profile: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error);
+                });
+        }
+
+        function saveProfile() {
+            const profileData = {
+                first_name: document.getElementById('profile_first_name').value,
+                last_name: document.getElementById('profile_last_name').value,
+                phone_number: document.getElementById('profile_phone_number').value,
+                email: document.getElementById('profile_email').value,
+                new_password: document.getElementById('profile_new_password').value
+            };
+
+            fetch('/user/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(profileData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    profileModal.hide();
+                    // Refresh the page to update displayed information
+                    window.location.reload();
+                } else {
+                    alert('Failed to update profile: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize modals
+            bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
+            profileModal = new bootstrap.Modal(document.getElementById('profileModal'));
+
             var calendarEl = document.getElementById('calendar');
             var selectedStart, selectedEnd;
-            var bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
-            var services = {};
             var isAdmin = {{ current_user.is_admin|tojson }};
             var currentAppointment = null;
 
@@ -235,8 +341,6 @@
                         .then(data => {
                             currentAppointment = data;
                             document.getElementById('appointmentId').value = data.id;
-                            document.getElementById('name').value = data.name;
-                            document.getElementById('phone').value = data.phone;
                             document.getElementById('service').value = data.service_id;
                             document.getElementById('selectedTime').textContent = 
                                 `${new Date(data.date + 'T' + data.time).toLocaleDateString()} ${new Date(data.date + 'T' + data.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
@@ -271,21 +375,56 @@
 
             calendar.render();
 
+            // Handle appointment clicking
+            function handleAppointmentClick(info) {
+                const appointmentId = info.event.id;
+                document.getElementById('appointmentId').value = appointmentId;
+                
+                {% if current_user.is_admin %}
+                // Show user details for admin
+                const userDetails = document.querySelector('.user-details');
+                if (info.event.extendedProps.userFirstName) {
+                    document.getElementById('userFullName').textContent = 
+                        `${info.event.extendedProps.userFirstName} ${info.event.extendedProps.userLastName}`;
+                    document.getElementById('userPhone').textContent = info.event.extendedProps.userPhone;
+                    document.getElementById('userEmail').textContent = info.event.extendedProps.userEmail;
+                    userDetails.style.display = 'block';
+                } else {
+                    userDetails.style.display = 'none';
+                }
+                {% endif %}
+
+                // Set service and time
+                document.getElementById('service').value = info.event.extendedProps.serviceId;
+                document.getElementById('selectedTime').textContent = 
+                    `${new Date(info.event.start).toLocaleDateString()} ${new Date(info.event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                
+                // Show/hide edit controls based on permissions
+                document.getElementById('saveAppointment').style.display = 
+                    info.event.extendedProps.canEdit ? 'block' : 'none';
+                document.getElementById('deleteAppointment').style.display = 
+                    info.event.extendedProps.canEdit ? 'block' : 'none';
+                
+                // Show the modal
+                bookingModal.show();
+            }
+
+            // Update calendar event click handler
+            calendar.setOption('eventClick', handleAppointmentClick);
+
             // Handle appointment saving (create or update)
             document.getElementById('saveAppointment').addEventListener('click', function() {
-                var name = document.getElementById('name').value;
-                var phone = document.getElementById('phone').value;
                 var serviceId = document.getElementById('service').value;
                 var appointmentId = document.getElementById('appointmentId').value;
 
-                if (!name || !phone || !serviceId) {
-                    alert('Please fill in all fields');
+                if (!serviceId) {
+                    alert('Please select a service');
                     return;
                 }
 
                 const appointmentData = {
-                    name: name,
-                    phone: phone,
+                    name: '{{ current_user.username }}',
+                    phone: '{{ current_user.phone }}',
                     service_id: serviceId,
                     date: selectedStart.toISOString().split('T')[0],
                     time: selectedStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })

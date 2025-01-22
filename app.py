@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -21,6 +21,10 @@ login_manager.login_view = 'login'
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(80), nullable=False)
+    last_name = db.Column(db.String(80), nullable=False)
+    phone_number = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(120), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
@@ -29,8 +33,6 @@ class User(UserMixin, db.Model):
 class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    name = db.Column(db.String(80), nullable=False)
-    phone = db.Column(db.String(20), nullable=False)
     service_id = db.Column(db.String(80), nullable=False)
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.Time, nullable=False)
@@ -85,6 +87,47 @@ def login():
         return render_template('login.html', error='Invalid username or password')
     
     return render_template('login.html')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        first_name = request.form['first_name']
+        last_name = request.form['last_name']
+        phone_number = request.form['phone_number']
+        email = request.form['email']
+        username = request.form['username']
+        password = request.form['password']
+
+        # Check if username or email already exists
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists')
+            return redirect(url_for('signup'))
+        
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered')
+            return redirect(url_for('signup'))
+
+        # Create new user
+        new_user = User(
+            first_name=first_name,
+            last_name=last_name,
+            phone_number=phone_number,
+            email=email,
+            username=username,
+            password_hash=generate_password_hash(password)
+        )
+
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            login_user(new_user)
+            return redirect(url_for('index'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Error creating account')
+            return redirect(url_for('signup'))
+
+    return render_template('signup.html')
 
 @app.route('/logout')
 @login_required
@@ -146,19 +189,35 @@ def get_appointments():
         service = services.get(appointment.service_id, {})
         is_owner = current_user.is_admin or appointment.user_id == current_user.id
         
+        # Base event information
         event = {
             'id': appointment.id,
-            'title': f"{appointment.name} - {service.get('name', 'Unknown Service')}" if is_owner else "Busy",
             'start': f"{appointment.date}T{appointment.time}",
             'end': (datetime.combine(appointment.date, appointment.time) + 
                    timedelta(minutes=service.get('duration', 60))).strftime('%Y-%m-%dT%H:%M:%S'),
             'extendedProps': {
-                'canEdit': is_owner
-            },
-            'backgroundColor': '#ff9f89' if not is_owner else None,  # Light red for busy slots
-            'borderColor': '#ff7f6e' if not is_owner else None,
-            'display': 'block' if not is_owner else None  # Block display for busy slots
+                'canEdit': is_owner,
+                'serviceId': appointment.service_id,
+                'serviceName': service.get('name', 'Unknown Service')
+            }
         }
+
+        # Add user details for admin or appointment owner
+        if is_owner:
+            event['title'] = f"{appointment.user.first_name} {appointment.user.last_name} - {service.get('name', 'Unknown Service')}"
+            if current_user.is_admin:
+                event['extendedProps'].update({
+                    'userFirstName': appointment.user.first_name,
+                    'userLastName': appointment.user.last_name,
+                    'userPhone': appointment.user.phone_number,
+                    'userEmail': appointment.user.email
+                })
+        else:
+            event['title'] = "Busy"
+            event['backgroundColor'] = '#ff9f89'  # Light red for busy slots
+            event['borderColor'] = '#ff7f6e'
+            event['display'] = 'block'  # Block display for busy slots
+
         appointments.append(event)
     
     return jsonify(appointments)
@@ -173,11 +232,15 @@ def get_appointment(appointment_id):
 
     return jsonify({
         'id': appointment.id,
-        'name': appointment.name,
-        'phone': appointment.phone,
         'service_id': appointment.service_id,
         'date': appointment.date.isoformat(),
-        'time': appointment.time.strftime('%H:%M')
+        'time': appointment.time.strftime('%H:%M'),
+        'user': {
+            'first_name': appointment.user.first_name,
+            'last_name': appointment.user.last_name,
+            'phone_number': appointment.user.phone_number,
+            'email': appointment.user.email
+        }
     })
 
 @app.route('/add_appointment', methods=['POST'])
@@ -213,11 +276,10 @@ def add_appointment():
         
         appointment = Appointment(
             user_id=current_user.id,
-            name=data['name'],
-            phone=data['phone'],
             service_id=data['service_id'],
             date=date,
-            time=time
+            time=time,
+            user=current_user
         )
         
         db.session.add(appointment)
@@ -265,8 +327,6 @@ def update_appointment(appointment_id):
         if conflicts:
             return jsonify({'success': False, 'error': 'Time slot is already booked'})
         
-        appointment.name = data['name']
-        appointment.phone = data['phone']
         appointment.service_id = data['service_id']
         appointment.date = date
         appointment.time = time
@@ -293,6 +353,46 @@ def delete_appointment(appointment_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/user/profile')
+@login_required
+def get_profile():
+    return jsonify({
+        'success': True,
+        'user': {
+            'first_name': current_user.first_name,
+            'last_name': current_user.last_name,
+            'phone_number': current_user.phone_number,
+            'email': current_user.email
+        }
+    })
+
+@app.route('/user/profile', methods=['PUT'])
+@login_required
+def update_profile():
+    data = request.json
+    
+    try:
+        # Check if email is being changed and if it's already taken by another user
+        if data['email'] != current_user.email and User.query.filter(User.email == data['email'], User.id != current_user.id).first():
+            return jsonify({'success': False, 'error': 'Email already registered'})
+
+        # Update user information
+        current_user.first_name = data['first_name']
+        current_user.last_name = data['last_name']
+        current_user.phone_number = data['phone_number']
+        current_user.email = data['email']
+        
+        # Update password if provided
+        if data['new_password']:
+            current_user.password_hash = generate_password_hash(data['new_password'])
+        
+        db.session.commit()
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
@@ -301,7 +401,11 @@ if __name__ == '__main__':
             admin = User(
                 username='admin',
                 password_hash=generate_password_hash('admin123'),
-                is_admin=True
+                is_admin=True,
+                first_name='Admin',
+                last_name='User',
+                phone_number='1234567890',
+                email='admin@example.com'
             )
             db.session.add(admin)
         
@@ -309,7 +413,11 @@ if __name__ == '__main__':
             user = User(
                 username='user',
                 password_hash=generate_password_hash('user123'),
-                is_admin=False
+                is_admin=False,
+                first_name='Regular',
+                last_name='User',
+                phone_number='9876543210',
+                email='user@example.com'
             )
             db.session.add(user)
         
