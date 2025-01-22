@@ -1,4 +1,4 @@
-# Shiek Hair Booking Website
+# AI designed and implemented small business Booking Website
 
 A appointment booking web server based on fullcalendar.js library.
 
